@@ -11,5 +11,6 @@ urlpatterns = [
     # API Endpoints
     path('add-info/', views.addInfo, name='add-info'),
     # path('edit-info/', views.editInfo, name='edit-info'),
-    # path('edit-user/', views.editUser, name='edit-user'),
+    path('edit-user/', views.editUser, name='edit-user'),
+    path('delete-user/', views.deleteUser, name='delete-user'),
 ]

@@ -168,3 +168,118 @@ def addInfo(request):
         }
         res = json.dumps(data)
         return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+
+
+def editUser(request):
+    if request.user.is_authenticated and request.user.is_superuser:
+        if request.method == "GET":
+            if request.GET.get('user_id') is not None:
+                id = int(request.GET.get('user_id'))
+                first_name = request.GET.get('first_name')
+                last_name = request.GET.get('last_name')
+                email = request.GET.get('email')
+                contact = request.GET.get('contact')
+                city = request.GET.get('city')
+                dob = request.GET.get('dob')
+                date_obj = datetime.datetime.strptime(dob, "%d %b, %Y")
+
+                try:
+                    user_obj = User.objects.get(id=id)
+                    user_obj.first_name = first_name
+                    user_obj.last_name = last_name
+                    user_obj.email = email
+                    user_obj.contact = contact
+                    user_obj.city = city
+                    user_obj.DOB = date_obj
+
+                    user_obj.save()
+
+                    data = {
+                        "msg": "User Information updated successfully"
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_200_OK)
+
+                except User.DoesNotExist:
+                    data = {
+                        "error": "User id is not valid."
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_404_NOT_FOUND)
+
+                except Exception as e:
+                    print(e)
+                    data = {
+                        "error": "Technical Error Occurred"
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            else:
+                data = {
+                    "error": "Data not parsed properly."
+                }
+                res = json.dumps(data)
+                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            data = {
+                "error": "Error in parsing data."
+            }
+            res = json.dumps(data)
+            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    else:
+        data = {
+            "error": "Login First"
+        }
+        res = json.dumps(data)
+        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+
+
+def deleteUser(request):
+    if request.user.is_authenticated and request.user.is_superuser:
+        if request.method == "GET":
+            if request.GET.get('id') is not None:
+                id = request.GET.get('id')
+                list_id = eval(id)
+
+                try:
+                    for i in list_id:
+                        obj = User.objects.get(id=i)
+                        obj.delete()
+
+                    data = {
+                        "msg": "Users deleted successfully"
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_200_OK)
+
+                except Exception as e:
+                    print(e)
+                    data = {
+                        "error": "Technical Error Occurred."
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            else:
+                data = {
+                    "error": "Data not parsed properly."
+                }
+                res = json.dumps(data)
+                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            data = {
+                "error": "Error in parsing data."
+            }
+            res = json.dumps(data)
+            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    else:
+        data = {
+            "error": "Login First"
+        }
+        res = json.dumps(data)
+        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)

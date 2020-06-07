@@ -10,6 +10,9 @@
 {% block extra_css %}
     <!-- Datatable -->
     <link rel="stylesheet" href="{% static 'Datatables/DataTables-1.10.21/css/dataTables.bootstrap4.min.css' %}">
+
+    <!-- Bootstrap Datepicker -->
+    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
 {% endblock extra_css %}
 <!-- Extra css Block > End -->
 
@@ -20,6 +23,14 @@
             <a class="navbar-brand" href="{% url 'Home_page' %}">
                 <h3>Admin Panel : Post and Manage Status</h3>
             </a>
+
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'Logout' %}">
+                        <i class="feather icon-log-out"></i> Logout
+                    </a>
+                </li>
+            </ul>
         </div>
     </nav>
 
@@ -31,28 +42,86 @@
                         <h5>Users</h5>
                     </div>
                     <div class="card-body">
+                        <div class="col-sm-12 d-flex justify-content-end" style="padding-bottom: 5px;">
+                            <button type="button" class="btn-delete-selected btn btn-primary" disabled>
+                                Delete Selected
+                            </button>
+                        </div>
                         <div class="table-responsive">
-                            <table id="example" class="table table-hover table-bordered" style="width:100%">
+                            <table id="user-table" class="table table-hover table-bordered" style="width:100%">
                                 <thead>
                                     <tr>
+                                        <th>
+                                            <div class="custom-control custom-checkbox">
+                                              <input type="checkbox" class="custom-control-input data-select-all" id="all">
+                                              <label class="custom-control-label" for="all"></label>
+                                            </div>
+                                        </th>
                                         <th>First Name</th>
                                         <th>Last Name</th>
                                         <th>Email Address</th>
                                         <th>Contact Number</th>
                                         <th>City</th>
                                         <th>DOB</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                 {% for u in users %}
                                     {% ifnotequal u request.user %}
-                                        <tr>
-                                            <td>{{ u.first_name }}</td>
-                                            <td>{{ u.last_name }}</td>
-                                            <td>{{ u.email }}</td>
-                                            <td>{{ u.contact }}</td>
-                                            <td>{{ u.city }}</td>
-                                            <td>{{ u.DOB|date:"d M, Y" }}</td>
+                                        <tr row_id="{{ u.id }}">
+                                            <td>
+                                                <div class="custom-control custom-checkbox">
+                                                  <input type="checkbox" class="custom-control-input data-select" id="{{ u.id }}">
+                                                  <label class="custom-control-label" for="{{ u.id }}"></label>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="user-data" col_name="first_name" id="first_name">
+                                                    {{ u.first_name }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="user-data" col_name="last_name" id="last_name">
+                                                    {{ u.last_name }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="user-data" col_name="email" id="email">
+                                                    {{ u.email }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="user-data" col_name="contact" id="contact">
+                                                    {{ u.contact }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="user-data" col_name="city" id="city">
+                                                    {{ u.city }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="user-data" col_name="dob" id="dob">
+                                                    {{ u.DOB|date:"d M, Y" }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group" aria-label="Basic example">
+                                                    <button type="button" class="btn-edit btn btn-sm btn-primary">
+                                                        <i class="feather icon-edit"></i>
+                                                    </button>
+                                                    <button type="button" class="btn-remove btn btn-sm btn-danger">
+                                                        <i class="feather icon-trash-2"></i>
+                                                    </button>
+                                                    <button type="button" class="btn-save btn btn-sm btn-success">
+                                                        <i class="feather icon-check"></i>
+                                                    </button>
+                                                    <button type="button" class="btn-cancel btn btn-sm btn-secondary">
+                                                        <i class="feather icon-x"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     {% else %}
                                     {% endifnotequal %}
@@ -73,6 +142,12 @@
     <!-- Datatable js -->
     <script type="text/javascript" src="{% static 'Datatables/DataTables-1.10.21/js/jquery.dataTables.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'Datatables/DataTables-1.10.21/js/dataTables.bootstrap4.min.js' %}"></script>
+
+    <!-- Sweetalert -->
+    <script type="text/javascript" src="{% static 'js/sweetalert2@9.js' %}"></script>
+
+    <!-- Bootstrap Datepicker -->
+    <script type="text/javascript" src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
 {% endblock extra_js %}
 <!-- Extra Js Block > End -->
 
@@ -80,8 +155,330 @@
 {% block custom_js %}
     <!-- Enabling Datatable -->
     <script type="text/javascript">
+        var table = $('#user-table');
         $(document).ready(function() {
-            $('#example').DataTable();
+            table.DataTable({
+                order: [[ 1, 'asc' ]],
+                "info": false
+            });
+        });
+    </script>
+
+    <!-- Datatable select custom js -->
+    <script type="text/javascript">
+        var total_row = table.find('.data-select').length;
+        var selected_rows = [];
+
+        //hiding save and x button from table
+        $(document).find('button.btn-save').hide();
+        $(document).find('button.btn-cancel').hide();
+
+        //function to remove specific element from an array
+        function Remove(val) {
+            var index = selected_rows.indexOf(val);
+
+            if (index > -1) {
+               selected_rows.splice(index, 1);
+            }
+        }
+
+        $('input.data-select-all').on('change', function (event) {
+            event.preventDefault();
+            var rows = table.find('.data-select');
+            if($(this).is(":checked")) {
+                $('button.btn-delete-selected').attr('disabled', false);
+                $.each(rows, function () {
+                    selected_rows.push(parseInt($(this).attr('id')));
+                    $(this).prop('checked', true);
+                });
+            }
+            else{
+                $('button.btn-delete-selected').attr('disabled', true);
+                selected_rows = [];
+                $.each(rows, function () {
+                    $(this).prop('checked', false);
+                });
+            }
+        });
+
+        $('input.data-select').on('change', function (event) {
+            var tbl_row = $(this).closest('tr');
+            if($(this).is(':checked')) {
+                selected_rows.push(parseInt(tbl_row.attr('row_id')));
+            }
+            else {
+                Remove(parseInt(tbl_row.attr('row_id')));
+            }
+            console.log(selected_rows);
+            var total_selected = table.find('input.data-select:checked');
+            if(total_selected.length == 0) {
+                $('button.btn-delete-selected').attr('disabled', true);
+                $('input.data-select-all').prop('indeterminate', false).prop('checked', false);
+            }
+            else if(total_selected.length == total_row) {
+                $('button.btn-delete-selected').attr('disabled', false);
+                $('input.data-select-all').prop('indeterminate', false).prop('checked', true);
+            }
+            else if(total_selected.length < total_row) {
+                $('button.btn-delete-selected').attr('disabled', false);
+                $('input.data-select-all').prop('indeterminate', true);
+            }
+        });
+
+        // Function to delete selected rows.
+        $('button.btn-delete-selected').on('click',async function (event) {
+            event.preventDefault();
+            if(selected_rows.length > 0) {
+                await Swal.fire({
+                    title: 'Are you Sure?',
+                    text: 'Selected User will be deleted.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Delete',
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        // ajax request
+                        $.ajax({
+                            type:"GET",
+                            url:"{% url 'delete-user' %}",
+                            data: {
+                                id: JSON.stringify(selected_rows, null),
+                            },
+
+                            success: function (msg) {
+                                var response = JSON.parse(msg);
+                                Swal.fire({
+                                    type: "success",
+                                    title: "Success",
+                                    text: response["msg"],
+                                    icon: "success"
+                                });
+
+                                // Deleting Table row
+                                $.each(selected_rows, function (index, value) {
+                                    $('tr[row_id='+value+']').remove();
+                                });
+                            },
+
+                            error: function (msg) {
+                                var response = JSON.parse(msg.responseText);
+                                console.log(msg);
+                                Swal.fire({
+                                    title: msg.status + " " + msg.statusText,
+                                    text: response["error"],
+                                    icon: "error"
+                                });
+                            }
+                        });
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
+                });
+            }
+        });
+
+        // click event of delete action button
+        $('button.btn-remove').on('click', function (event) {
+            event.preventDefault();
+            var tbl_row = $(this).closest('tr');
+            var user_id = tbl_row.attr('row_id');
+            Swal.fire({
+                title: 'Are you Sure?',
+                text: 'User will be deleted.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Delete',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    // ajax request
+                    $.ajax({
+                        type:"GET",
+                        url:"{% url 'delete-user' %}",
+                        data: {
+                            id: JSON.stringify([user_id,], null),
+                        },
+
+                        success: function (msg) {
+                            var response = JSON.parse(msg);
+                            Swal.fire({
+                                type: "success",
+                                title: "Success",
+                                text: response["msg"],
+                                icon: "success"
+                            });
+
+                            //deleting row
+                            tbl_row.remove();
+                        },
+
+                        error: function (msg) {
+                            var response = JSON.parse(msg.responseText);
+                            console.log(msg);
+                            Swal.fire({
+                                title: msg.status + " " + msg.statusText,
+                                text: response["error"],
+                                icon: "error"
+                            });
+                        }
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            });
+        });
+
+        // Array of city names
+        var cities = ["Ahmedabad", "Amreli", "Anand", "Banas Kantha", "Bharuch", "Bhavnagar", "Dang",
+                      "Dahod", "Gandhinagar", "Jamnagar", "Junagadh", "Kachch", "Kheda", "Mahesana",
+                      "Narmada", "Navsari", "Panch mahal", "Patan", "Porbandar", "Rajkot", "Sabar kantha",
+                      "Surat", "Surendranagar", "Tapi", "Vadodara", "Valsad"];
+
+        // click event for edit action button
+        $('button.btn-edit').on('click', function (event) {
+            event.preventDefault();
+            var tbl_row = $(this).closest('tr');
+            var user_id = tbl_row.attr('row_id');
+
+            //Buttons
+            tbl_row.find('.btn-edit').hide();
+            tbl_row.find('.btn-remove').hide();
+            tbl_row.find('.btn-save').show();
+            tbl_row.find('.btn-cancel').show();
+
+            // Enabling edit mode.
+            tbl_row.find('.user-data').each(function (index, value) {
+                $(this).attr('original_entry', $(this).html().toString().trim());
+                if($(this).attr('col_name') == "first_name") {
+                    var value = $(this).html().toString().trim();
+                    var first_name_input = '<input class="form-control" id="new_first_name" name="new_first_name" value="'+value+'" style="width: inherit">';
+                    $(this).html(first_name_input);
+                }
+                else if($(this).attr('col_name') == "last_name") {
+                    var value = $(this).html().toString().trim();
+                    var last_name_input = '<input class="form-control" id="new_last_name" name="new_last_name" value="'+value+'" style="width: inherit">';
+                    $(this).html(last_name_input);
+                }
+                else if($(this).attr('col_name') == "email") {
+                    var value = $(this).html().toString().trim();
+                    var email_input = '<input class="form-control" id="new_email" name="new_email" value="'+value+'" style="width: inherit">';
+                    $(this).html(email_input);
+                }
+                else if($(this).attr('col_name') == "contact") {
+                    var value = $(this).html().toString().trim();
+                    var contact_input = '<input class="form-control" id="new_contact" name="new_contact" value="'+value+'" style="width: inherit">';
+                    $(this).html(contact_input);
+                }
+                else if($(this).attr('col_name') == "city") {
+                    var value = $(this).html().toString().trim();
+                    var city_input = '<select class="custom-select" id="new_city" name="new_city">';
+                    $.each(cities, function (index, val) {
+                        if(val == value){
+                            city_input += '<option value="'+ val +'" selected>'+ val +'</option>';
+                        }
+                        else {
+                            city_input += '<option value="'+ val +'">'+ val +'</option>';
+                        }
+                    });
+                    city_input += '</select>';
+                    $(this).html(city_input);
+                }
+                else if($(this).attr('col_name') == "dob") {
+                    var value = $(this).html().toString().trim();
+                    var dob_input = '<input class="form-control datepicker" name="new_dob" id="new_dob" value="'+ value +'" style="width: inherit;">';
+                    $(this).html(dob_input);
+                    $('.datepicker').datepicker({
+                        format: "dd M, yyyy"
+                    });
+                }
+            });
+        });
+
+        //click event for save button.
+        $('button.btn-save').on('click', function (event) {
+            event.preventDefault();
+            var tbl_row = $(this).closest('tr');
+            var user_id = tbl_row.attr('row_id');
+
+            //Buttons
+            tbl_row.find('.btn-edit').show();
+            tbl_row.find('.btn-remove').show();
+            tbl_row.find('.btn-save').hide();
+            tbl_row.find('.btn-cancel').hide();
+
+            var new_first_name = tbl_row.find('[name=new_first_name]').val();
+            var new_last_name = tbl_row.find('[name=new_last_name]').val();
+            var new_email = tbl_row.find('[name=new_email]').val();
+            var new_contact = tbl_row.find('[name=new_contact]').val();
+            var new_city = tbl_row.find('[name=new_city]').val();
+            var new_dob = tbl_row.find('[name=new_dob]').val();
+
+            $.ajax({
+                type:"GET",
+                url:"{% url 'edit-user' %}",
+                data: {
+                    user_id: user_id,
+                    first_name: new_first_name,
+                    last_name: new_last_name,
+                    email: new_email,
+                    contact: new_contact,
+                    city: new_city,
+                    dob: new_dob
+                },
+
+                success: function (msg) {
+                    var response = JSON.parse(msg);
+                    Swal.fire({
+                        title: response["msg"],
+                        icon: "success"
+                    });
+
+                    // Updating existing data
+                    tbl_row.find('.user-data').each(function (index, val) {
+                        $(this).attr('original_entry', $(this).html().toString().trim());
+                        if($(this).attr('col_name') == "first_name") {
+                            $(this).html(new_first_name);
+                        }
+                        else if($(this).attr('col_name') == "last_name") {
+                            $(this).html(new_last_name);
+                        }
+                        else if($(this).attr('col_name') == "email") {
+                            $(this).html(new_email);
+                        }
+                        else if($(this).attr('col_name') == "contact") {
+                            $(this).html(new_contact);
+                        }
+                        else if($(this).attr('col_name') == "city") {
+                            $(this).html(new_city);
+                        }
+                        else if($(this).attr('col_name') == "dob") {
+                            $(this).html(new_dob);
+                        }
+                    });
+                },
+
+                error: function (msg) {
+                    var response = JSON.parse(msg.responseText);
+                    Swal.fire({
+                        title: response["error"],
+                        icon: "error"
+                    });
+                }
+            });
+        });
+
+        //click event for cancel button.
+        $('button.btn-cancel').on('click', function (event) {
+            event.preventDefault();
+            var tbl_row = $(this).closest('tr');
+
+            //Buttons
+            tbl_row.find('.btn-edit').show();
+            tbl_row.find('.btn-remove').show();
+            tbl_row.find('.btn-save').hide();
+            tbl_row.find('.btn-cancel').hide();
+
+
+            tbl_row.find('.user-data').each(function (index, val) {
+                $(this).html($(this).attr('original_entry'));
+            });
         });
     </script>
 {% endblock custom_js %}
