@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load static %}
+<!-- Title block > Start -->
+{% block title %}
+    User Dashboard
+{% endblock title %}
+<!-- Title block > End -->
+
+<!-- Extra css Block > Start -->
+{% block extra_css %}
+{% endblock extra_css %}
+<!-- Extra css Block > End -->
+
+<!-- Body Block > Start -->
+{% block body %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container d-flex align-items-center">
+            <a class="navbar-brand" href="{% url 'Home_page' %}">
+                <h3>Post and Manage Status</h3>
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#nav-links" aria-controls="nav-links" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="feather icon-menu"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="nav-links">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item dropdown custom-dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ name }}
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                            <a class="dropdown-item custom-dropdown" href="#" style="margin-bottom: 5px">
+                                <i class="feather icon-settings"></i>&nbsp;&nbsp;Profile
+                            </a>
+                            <a class="dropdown-item custom-dropdown" href="{% url 'Logout' %}">
+                                <i class="feather icon-log-out"></i>&nbsp;&nbsp;Logout
+                            </a>
+                        </div>
+                    </li>
+                </ul>
+	      </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12" style="margin-top: 10px">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="form-group row">
+                            <div class="col-md-12">
+                                <label for="info" class="col-form-label">Enter Information</label>
+                                <textarea id="info" class="form-control" name="info" required></textarea>
+                                <button type="button" class="btn btn-outline-primary mt-2" id="info-submit">
+                                    Submit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-12" style="margin-top: 10px;">
+                <div class="card">
+                    <div class="card-header">
+                        Information Submitted by you
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered">
+                                <thead>
+                                <tr>
+                                    <th scope="col" style="width: 70%">Information</th>
+                                    <th scope="col" style="width: 30%">Date</th>
+                                </tr>
+                                </thead>
+                                <tbody id="info-table">
+                                {% ifequal count 0 %}
+                                    <tr>
+                                        <td colspan="2"><span style="color: red;">No Information available.</span></td>
+                                    </tr>
+                                {% else %}
+                                    {% for i in info %}
+                                        <tr>
+                                            <td style="white-space: normal;">{{ i.info }}</td>
+                                            <td>{{ i.timestamp|date:"d F, Y h:i A" }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endifequal %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <svg class="spinner centered" width="65px" height="65px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+           <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
+        </svg>
+    </div>
+{% endblock body %}
+<!-- Body Block > End -->
+
+<!-- Extra Js Block > Start -->
+{% block extra_js %}
+    <!-- Sweetalert -->
+    <script type="text/javascript" src="{% static 'js/sweetalert2@9.js' %}"></script>
+{% endblock extra_js %}
+<!-- Extra Js Block > End -->
+
+<!-- Custom Js Block > Start -->
+{% block custom_js %}
+    <!-- enablind spinner -->
+    <script type="text/javascript">
+        function displayOverlay() {
+            $('div#overlay').show();
+        }
+
+        function removeOverlay() {
+            $('div#overlay').hide();
+        }
+    </script>
+
+    <!-- Ajax Request for Submitting info -->
+    <script type="text/javascript">
+        $('button#info-submit').on('click', function (event) {
+            displayOverlay();
+            event.preventDefault();
+            var info = $('textarea#info').val();
+
+            $.ajax({
+                type:"GET",
+                url:"{% url 'add-info' %}",
+                data: {
+                    info: info,
+                },
+
+                success: function (msg) {
+                    removeOverlay();
+                    var response = JSON.parse(msg);
+                    console.log(response);
+                    var html = '<tr>';
+                    html += '<td style="white-space: normal;">'+ info +'</td><td>'+ response["date"] +'</td>';
+                    html += '</tr>';
+
+                    $('tbody#info-table').prepend(html);
+                    Swal.fire({
+                        type: "success",
+                        title: response["msg"],
+                        icon: "success",
+                    });
+                },
+
+                error: function (msg) {
+                    removeOverlay();
+                    var response = JSON.parse(msg.responseText);
+                    Swal.fire({
+                        title: "Error",
+                        text: response["error"],
+                        dangerMode: true,
+                        type: "error",
+                    });
+                }
+            });
+        })
+    </script>
+{% endblock custom_js %}
+<!-- Custom Js Block > End -->

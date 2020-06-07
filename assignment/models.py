@@ -78,6 +78,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.admin
 
 
-class information(models.Model):
+class Information(models.Model):
     auth_id = models.ForeignKey(settings.AUTH_USER_MODEL, to_field='id', on_delete=models.CASCADE, verbose_name=u'User')
     info = models.TextField(verbose_name='Information')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        get_latest_by = 'timestamp'

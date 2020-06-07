@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+<!-- Title block > Start -->
+{% block title %}
+    Admin
+{% endblock title %}
+<!-- Title block > End -->
+
+<!-- Extra css Block > Start -->
+{% block extra_css %}
+    <!-- Datatable -->
+    <link rel="stylesheet" href="{% static 'Datatables/DataTables-1.10.21/css/dataTables.bootstrap4.min.css' %}">
+{% endblock extra_css %}
+<!-- Extra css Block > End -->
+
+<!-- Body Block > Start -->
+{% block body %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container d-flex align-items-center">
+            <a class="navbar-brand" href="{% url 'Home_page' %}">
+                <h3>Admin Panel : Post and Manage Status</h3>
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12" style="margin-top: 10px">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Users</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table id="example" class="table table-hover table-bordered" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th>First Name</th>
+                                        <th>Last Name</th>
+                                        <th>Email Address</th>
+                                        <th>Contact Number</th>
+                                        <th>City</th>
+                                        <th>DOB</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for u in users %}
+                                    {% ifnotequal u request.user %}
+                                        <tr>
+                                            <td>{{ u.first_name }}</td>
+                                            <td>{{ u.last_name }}</td>
+                                            <td>{{ u.email }}</td>
+                                            <td>{{ u.contact }}</td>
+                                            <td>{{ u.city }}</td>
+                                            <td>{{ u.DOB|date:"d M, Y" }}</td>
+                                        </tr>
+                                    {% else %}
+                                    {% endifnotequal %}
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+<!-- Body Block > End -->
+
+<!-- Extra Js Block > Start -->
+{% block extra_js %}
+    <!-- Datatable js -->
+    <script type="text/javascript" src="{% static 'Datatables/DataTables-1.10.21/js/jquery.dataTables.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'Datatables/DataTables-1.10.21/js/dataTables.bootstrap4.min.js' %}"></script>
+{% endblock extra_js %}
+<!-- Extra Js Block > End -->
+
+<!-- Custom Js Block > Start -->
+{% block custom_js %}
+    <!-- Enabling Datatable -->
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#example').DataTable();
+        });
+    </script>
+{% endblock custom_js %}
+<!-- Custom Js Block > End -->

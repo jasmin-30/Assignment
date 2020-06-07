@@ -1,21 +1,26 @@
 import datetime
+import json
 
 from django.conf import settings as st
-from django.contrib.auth import authenticate, login
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render
+from rest_framework import status
 
 from .models import *
 
 
 # Create your views here.
 
-def HomePageView(request):
+def homePageView(request):
     context = {
         'base_url': st.BASE_URL
     }
     if request.method == "POST":
+
+        # =================== Login =================================
         if request.POST.get('email_address') is not None:
             email = request.POST.get('email_address')
             pwd = request.POST.get('password')
@@ -24,18 +29,22 @@ def HomePageView(request):
                 user_obj = User.objects.get(email=email)
 
             except User.DoesNotExist:
-                context["error"] = "Email ID does not exist. Register first."
+                messages.error(request, "Email ID does not exist. Register first.")
                 return render(request, "home.html", context)
 
             user = authenticate(request, username=email, password=pwd)
             if user is not None:
                 login(request, user)
-                return HttpResponse("Logged in")
+                if user.is_admin:
+                    return HttpResponseRedirect('/admin/dashboard/')
+                else:
+                    return HttpResponseRedirect('/dashboard/')
 
             else:
-                context["error"] = "Please enter valid credentials."
+                messages.error(request, "Please enter valid credentials.")
                 return render(request, 'home.html', context)
 
+        # ================== Registration ============================
         if request.POST.get('email') is not None:
             fname = request.POST.get('first_name')
             lname = request.POST.get('last_name')
@@ -51,7 +60,7 @@ def HomePageView(request):
             except IntegrityError as e:
                 # Integrity error means email id is already registered
                 print(e)
-                context["error"] = "Email ID is already Registered. Log in with valid credentials."
+                messages.error(request, "Email ID is already Registered. Log in with valid credentials.")
                 return render(request, "home.html", context)
 
             try:
@@ -62,13 +71,100 @@ def HomePageView(request):
                 dob_list = dob.split("/")
                 user.DOB = datetime.datetime(int(dob_list[2]), int(dob_list[1]), int(dob_list[0]))
                 user.save()
-                context["success"] = "Successfully Registered."
+                messages.success(request, "Successfully Registered.")
                 return render(request, 'home.html', context)
 
             except Exception as e:
                 print(e)
                 user.delete()
-                context["error"] = "Technical Error occured."
+                messages.error(request, "Technical Error Occurred")
                 return render(request, 'home.html', context)
 
     return render(request, 'home.html', context)
+
+
+# ======================= Logout View =================================
+def Logout(request):
+    if request.user.is_authenticated:
+        logout(request)
+        return HttpResponseRedirect('/')
+    else:
+        return HttpResponseRedirect('/')
+
+
+# ======================== Dashboard view ===========================
+# It will display pages according to
+def userDashboard(request):
+    context = {
+        'base_url': st.BASE_URL
+    }
+    if request.user.is_authenticated:
+        context['name'] = request.user.first_name + " " + request.user.last_name
+        info_qs = Information.objects.filter(auth_id=request.user).order_by('-timestamp')
+        context["info"] = info_qs
+        context["count"] = info_qs.count()
+        return render(request, 'user.html', context)
+    else:
+        messages.error(request, "Login First")
+        return HttpResponseRedirect('/')
+
+
+# ================== Admin Dashboard view =============================
+def adminView(request):
+    context = {
+        'base_url': st.BASE_URL
+    }
+    if request.user.is_authenticated and request.user.is_superuser:
+        user_qs = User.objects.all()
+        context["users"] = user_qs
+        return render(request, 'admin.html', context)
+    else:
+        messages.error(request, "You are not registered as administrator")
+        logout(request)
+        return HttpResponseRedirect('/')
+
+
+# ================== API Endpoints Views ===============================
+def addInfo(request):
+    if request.user.is_authenticated:
+        if request.method == "GET":
+            if request.GET.get('info') is not None:
+                info = request.GET.get('info')
+
+                try:
+                    info_obj = Information.objects.create(auth_id=request.user, info=info)
+                    info_obj.save()
+                    data = {
+                        'msg': "Information added Successfully",
+                        'date': datetime.datetime.now().strftime("%d %B, %Y %I:%M %p")
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_200_OK)
+                except Exception as e:
+                    print(e)
+                    data = {
+                        'error': "Error in adding Information."
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            else:
+                data = {
+                    "error": "Data not parsed properly."
+                }
+                res = json.dumps(data)
+                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            data = {
+                "error": "Error in parsing data."
+            }
+            res = json.dumps(data)
+            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    else:
+        data = {
+            "error": "Login First"
+        }
+        res = json.dumps(data)
+        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)

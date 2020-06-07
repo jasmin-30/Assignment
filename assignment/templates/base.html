@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>
+            {% block title %}
+            {% endblock title %}
+        </title>
+
+        <!-- Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="{% static 'css/bootstrap/bootstrap.min.css' %}">
+
+        <!-- Feather icons -->
+        <link rel="stylesheet" href="{% static 'icon/feather/css/feather.css' %}">
+
+        {% block extra_css %}
+        {% endblock extra_css %}
+
+        <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    </head>
+
+    <body>
+        {% block body %}
+        {% endblock body %}
+
+        <!-- Required Javascripts -->
+        <script type="text/javascript" src="{% static 'js/jquery-3.5.1.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/popper.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/bootstrap/bootstrap.min.js' %}"></script>
+
+        {% block extra_js %}
+        {% endblock extra_js %}
+
+        {% block custom_js %}
+        {% endblock custom_js %}
+    </body>
+</html>
