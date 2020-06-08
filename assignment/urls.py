@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from assignment import views
@@ -15,4 +17,4 @@ urlpatterns = [
     path('delete-info/', views.deleteInfo, name='delete-info'),
     path('edit-user/', views.editUser, name='edit-user'),
     path('delete-user/', views.deleteUser, name='delete-user'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
