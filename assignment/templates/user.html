@@ -154,9 +154,8 @@
         $(document).find('button.btn-save').hide();
         $(document).find('button.btn-cancel').hide();
 
-        var old_info;
         // Click event for edit button.
-        function edit_info(event) {
+        $(document).on('click','button.btn-edit', function (event) {
             event.preventDefault();
             var tbl_row = $(this).closest('tr');
             var info_id = tbl_row.attr('row_id');
@@ -168,14 +167,13 @@
             tbl_row.find('.btn-cancel').show();
 
             var div = tbl_row.find('.info-data');
-            old_info = div.html().toString().trim();
-            var input = '<textarea class="form-control" name="new_info" id="new_info" cols="3">'+ old_info +'</textarea>';
+            div.attr('original_entry', div.html().toString().trim());
+            var input = '<textarea class="form-control" name="new_info" id="new_info" cols="3">'+ div.attr('original_entry') +'</textarea>';
             div.html(input);
-        }
-        $('button.btn-edit').on('click', edit_info);
+        });
 
         //click event for save button
-        function save_updated_info(event) {
+        $(document).on('click', 'button.btn-save', function (event) {
             displayOverlay();
             event.preventDefault();
             var tbl_row = $(this).closest('tr');
@@ -219,14 +217,14 @@
                         icon: "error"
                     });
 
-                    tbl_row.find('div.info-data').html(old_info);
+                    var div = tbl_row.find('div.info-data');
+                    div.html(div.attr('original_entry'));
                 }
             })
-        }
-        $('button.btn-save').on('click', save_updated_info);
+        });
 
         //click event for cancel button
-        function cancel_edit(event) {
+        $(document).on('click', 'button.btn-cancel', function (event) {
             event.preventDefault();
             var tbl_row = $(this).closest('tr');
             //Buttons
@@ -235,12 +233,12 @@
             tbl_row.find('.btn-save').hide();
             tbl_row.find('.btn-cancel').hide();
 
-            tbl_row.find('.info-data').html(old_info);
-        }
-        $('button.btn-cancel').on('click', cancel_edit);
+            var div = tbl_row.find('.info-data');
+            div.html(div.attr('original_entry'));
+        });
 
         // Click event for action delete button
-        function remove_info(event) {
+        $(document).on('click', 'button.btn-remove', function (event) {
             event.preventDefault();
             var tbl_row = $(this).closest('tr');
             var info_id = tbl_row.attr('row_id');
@@ -287,8 +285,7 @@
                 },
                 allowOutsideClick: () => !Swal.isLoading()
             });
-        }
-        $('button.btn-remove').on('click', remove_info);
+        });
     </script>
 
     <!-- Ajax Request for Submitting info -->
@@ -323,10 +320,6 @@
                     $('tbody#info-table').prepend(html);
                     $(document).find('button.btn-save').hide();
                     $(document).find('button.btn-cancel').hide();
-                    $('button.btn-edit').on('click', edit_info);
-                    $('button.btn-remove').on('click', remove_info);
-                    $('button.btn-save').on('click', save_updated_info);
-                    $('button.btn-cancel').on('click', cancel_edit);
 
                     Swal.fire({
                         type: "success",
