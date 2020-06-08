@@ -5,7 +5,6 @@ from .models import User, Information
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        # noinspection PyPackageRequirements
         fields = [
             'first_name',
             'last_name',
