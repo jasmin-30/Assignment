@@ -15,7 +15,7 @@
 {% block body %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container d-flex align-items-center">
-            <a class="navbar-brand" href="{% url 'Home_page' %}">
+            <a class="navbar-brand" href="{% url 'User_Dashboard' %}">
                 <h3>Post and Manage Status</h3>
             </a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#nav-links" aria-controls="nav-links" aria-expanded="false" aria-label="Toggle navigation">
@@ -121,6 +121,8 @@
            <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
         </svg>
     </div>
+
+    {% csrf_token %}
 {% endblock body %}
 <!-- Body Block > End -->
 
@@ -135,6 +137,8 @@
 {% block custom_js %}
     <!-- enablind spinner -->
     <script type="text/javascript">
+        var token =  $('input[name="csrfmiddlewaretoken"]').attr('value');
+
         function displayOverlay() {
             $('div#overlay').show();
         }
@@ -142,50 +146,6 @@
         function removeOverlay() {
             $('div#overlay').hide();
         }
-    </script>
-
-    <!-- Ajax Request for Submitting info -->
-    <script type="text/javascript">
-        $('button#info-submit').on('click', function (event) {
-            displayOverlay();
-            event.preventDefault();
-            var info = $('textarea#info').val();
-
-            $.ajax({
-                type:"GET",
-                url:"{% url 'add-info' %}",
-                data: {
-                    info: info,
-                },
-
-                success: function (msg) {
-                    removeOverlay();
-                    var response = JSON.parse(msg);
-                    console.log(response);
-                    var html = '<tr>';
-                    html += '<td style="white-space: normal;">'+ info +'</td><td>'+ response["date"] +'</td>';
-                    html += '</tr>';
-
-                    $('tbody#info-table').prepend(html);
-                    Swal.fire({
-                        type: "success",
-                        title: response["msg"],
-                        icon: "success",
-                    });
-                },
-
-                error: function (msg) {
-                    removeOverlay();
-                    var response = JSON.parse(msg.responseText);
-                    Swal.fire({
-                        title: "Error",
-                        text: response["error"],
-                        dangerMode: true,
-                        type: "error",
-                    });
-                }
-            });
-        })
     </script>
 
     <!-- Javasscripts for modifying information dara -->
@@ -196,7 +156,7 @@
 
         var old_info;
         // Click event for edit button.
-        $('button.btn-edit').on('click', function (event) {
+        function edit_info(event) {
             event.preventDefault();
             var tbl_row = $(this).closest('tr');
             var info_id = tbl_row.attr('row_id');
@@ -211,10 +171,12 @@
             old_info = div.html().toString().trim();
             var input = '<textarea class="form-control" name="new_info" id="new_info" cols="3">'+ old_info +'</textarea>';
             div.html(input);
-        });
+        }
+        $('button.btn-edit').on('click', edit_info);
 
         //click event for save button
-        $('button.btn-save').on('click', function (event) {
+        function save_updated_info(event) {
+            displayOverlay();
             event.preventDefault();
             var tbl_row = $(this).closest('tr');
             var info_id = tbl_row.attr('row_id');
@@ -228,17 +190,20 @@
             var info = tbl_row.find('[name=new_info]').val();
             //ajax request
             $.ajax({
-                type:"GET",
-                url:"{% url 'edit-info' %}",
+                type:"PUT",
+                url:"/api/edit-info/"+ info_id +"/",
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", token);
+                },
                 data: {
-                    info_id: info_id,
                     info: info
                 },
 
                 success: function (msg) {
-                    var response = JSON.parse(msg);
+                    removeOverlay();
                     Swal.fire({
-                        title: response["msg"],
+                        title: "Successfully Updated",
+                        text: msg["msg"],
                         icon: "success"
                     });
 
@@ -246,19 +211,22 @@
                 },
 
                 error: function (msg) {
-                    var response = JSON.parse(msg.responseText);
+                    removeOverlay();
                     Swal.fire({
-                        title: response["error"],
+                        title: msg.status + " " + msg.statusText,
+                        text: msg["error"],
+                        dangerMode: true,
                         icon: "error"
                     });
 
                     tbl_row.find('div.info-data').html(old_info);
                 }
             })
-        });
+        }
+        $('button.btn-save').on('click', save_updated_info);
 
         //click event for cancel button
-        $('button.btn-cancel').on('click', function (event) {
+        function cancel_edit(event) {
             event.preventDefault();
             var tbl_row = $(this).closest('tr');
             //Buttons
@@ -268,10 +236,11 @@
             tbl_row.find('.btn-cancel').hide();
 
             tbl_row.find('.info-data').html(old_info);
-        });
+        }
+        $('button.btn-cancel').on('click', cancel_edit);
 
         // Click event for action delete button
-        $('button.btn-remove').on('click', function (event) {
+        function remove_info(event) {
             event.preventDefault();
             var tbl_row = $(this).closest('tr');
             var info_id = tbl_row.attr('row_id');
@@ -284,18 +253,20 @@
                 confirmButtonText: 'Delete',
                 showLoaderOnConfirm: true,
                 preConfirm: () => {
+                    displayOverlay();
                     // ajax request
                     $.ajax({
-                        type:"GET",
-                        url:"{% url 'delete-info' %}",
-                        data: {
-                            info_id: info_id
+                        type:"DELETE",
+                        url:"/api/edit-info/"+ info_id +"/",
+                        beforeSend: function (xhr, settings) {
+                            xhr.setRequestHeader("X-CSRFToken", token);
                         },
 
                         success: function (msg) {
-                            var response = JSON.parse(msg);
+                            removeOverlay();
                             Swal.fire({
-                                title: response["msg"],
+                                title: "Successfully deleted",
+                                text: msg["msg"],
                                 icon: "success"
                             });
 
@@ -304,11 +275,11 @@
                         },
 
                         error: function (msg) {
-                            var response = JSON.parse(msg.responseText);
-                            console.log(msg);
+                            removeOverlay();
                             Swal.fire({
                                 title: msg.status + " " + msg.statusText,
-                                text: response["error"],
+                                text: msg["error"],
+                                dangerMode: true,
                                 icon: "error"
                             });
                         }
@@ -316,7 +287,62 @@
                 },
                 allowOutsideClick: () => !Swal.isLoading()
             });
-        });
+        }
+        $('button.btn-remove').on('click', remove_info);
+    </script>
+
+    <!-- Ajax Request for Submitting info -->
+    <script type="text/javascript">
+        $('button#info-submit').on('click', function (event) {
+            displayOverlay();
+            event.preventDefault();
+            var info = $('textarea#info').val();
+            $('textarea#info').val('');
+
+            $.ajax({
+                type:"POST",
+                url:"/api/info-api/",
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", token);
+                },
+                data: {
+                    auth_id: "{{ request.user.id }}",
+                    info: info,
+                },
+
+                success: function (msg) {
+                    removeOverlay();
+                    var html = '<tr row_id="'+ msg["id"] +'">';
+                    html += '<td style="white-space: normal;"><div class="info-data">'+ info +'</div></td><td>'+ msg["date"] +'</td>';
+                    html += '<td class="text-center"><div class="btn-group btn-group-sm" role="group" aria-label="Basic example"><button type="button" class="btn-edit btn btn-sm btn-primary"><i class="feather icon-edit"></i></button><button type="button" class="btn-remove btn btn-sm btn-danger"><i class="feather icon-trash-2"></i></button><button type="button" class="btn-save btn btn-sm btn-success"><i class="feather icon-check"></i></button><button type="button" class="btn-cancel btn btn-sm btn-secondary"><i class="feather icon-x"></i></button></div></td>';
+                    html += '</tr>';
+
+                    $('tbody#info-table').prepend(html);
+                    $(document).find('button.btn-save').hide();
+                    $(document).find('button.btn-cancel').hide();
+                    $('button.btn-edit').on('click', edit_info);
+                    $('button.btn-remove').on('click', remove_info);
+                    $('button.btn-save').on('click', save_updated_info);
+                    $('button.btn-cancel').on('click', cancel_edit);
+
+                    Swal.fire({
+                        type: "success",
+                        title: msg["msg"],
+                        icon: "success",
+                    });
+                },
+
+                error: function (msg) {
+                    removeOverlay();
+                    Swal.fire({
+                        title: msg.status + " " + msg.statusText,
+                        text: msg["error"],
+                        dangerMode: true,
+                        type: "error",
+                    });
+                }
+            });
+        })
     </script>
 {% endblock custom_js %}
 <!-- Custom Js Block > End -->

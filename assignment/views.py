@@ -9,11 +9,15 @@ from django.db import IntegrityError
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render
 from rest_framework import status
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework.decorators import api_view
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import *
+from .serializers import UserSerializer, InformationSerializer
 
-
-# Create your views here.
 
 def homePageView(request):
     context = {
@@ -160,7 +164,8 @@ def userProfile(request):
                         messages.error(request, "Error in changing password. please try again later.")
 
                 else:
-                    messages.error(request, "Old Password does not match with the one you entered. Please enter correct password.")
+                    messages.error(request,
+                                   "Old Password does not match with the one you entered. Please enter correct password.")
 
         context['name'] = request.user.first_name + " " + request.user.last_name
         context['user'] = request.user
@@ -187,251 +192,359 @@ def adminView(request):
 
 
 # ================== API Endpoints Views ===============================
-def addInfo(request):
-    if request.user.is_authenticated:
-        if request.method == "GET":
-            if request.GET.get('info') is not None:
-                info = request.GET.get('info')
+# def addInfo(request):
+#     if request.user.is_authenticated:
+#         if request.method == "GET":
+#             data = request.REQUEST
+#             print(data)
+#             if request.GET.get('info') is not None:
+#                 info = request.GET.get('info')
+#
+#                 try:
+#                     info_obj = Information.objects.create(auth_id=request.user, info=info)
+#                     info_obj.save()
+#                     data = {
+#                         'msg': "Information added Successfully",
+#                         'date': datetime.datetime.now().strftime("%d %B, %Y %I:%M %p")
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_200_OK)
+#                 except Exception as e:
+#                     print(e)
+#                     data = {
+#                         'error': "Error in adding Information."
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#             else:
+#                 data = {
+#                     "error": "Data not parsed properly."
+#                 }
+#                 res = json.dumps(data)
+#                 return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+#
+#         else:
+#             data = {
+#                 "error": "Error in parsing data."
+#             }
+#             res = json.dumps(data)
+#             return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#
+#     else:
+#         data = {
+#             "error": "Login First"
+#         }
+#         res = json.dumps(data)
+#         return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+#
+#
+# def editInfo(request):
+#     if request.user.is_authenticated:
+#         if request.method == "GET":
+#             if request.GET.get('info_id') is not None:
+#                 info_id = int(request.GET.get('info_id'))
+#                 info = request.GET.get('info')
+#
+#                 try:
+#                     info_obj = Information.objects.get(id=info_id)
+#                     info_obj.info = info
+#                     info_obj.save()
+#                     data = {
+#                         'msg': "Information Updated Successfully",
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_200_OK)
+#                 except Exception as e:
+#                     print(e)
+#                     data = {
+#                         'error': "Error in Updating Information."
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#             else:
+#                 data = {
+#                     "error": "Data not parsed properly."
+#                 }
+#                 res = json.dumps(data)
+#                 return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+#
+#         else:
+#             data = {
+#                 "error": "Error in parsing data."
+#             }
+#             res = json.dumps(data)
+#             return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#
+#     else:
+#         data = {
+#             "error": "Login First"
+#         }
+#         res = json.dumps(data)
+#         return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+#
+#
+# def deleteInfo(request):
+#     if request.user.is_authenticated:
+#         if request.method == "GET":
+#             if request.GET.get('info_id') is not None:
+#                 info_id = int(request.GET.get('info_id'))
+#
+#                 try:
+#                     info_obj = Information.objects.get(id=info_id)
+#                     info_obj.delete()
+#                     data = {
+#                         'msg': "Information Deleted Successfully",
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_200_OK)
+#                 except Exception as e:
+#                     print(e)
+#                     data = {
+#                         'error': "Error in deleting Information."
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#             else:
+#                 data = {
+#                     "error": "Data not parsed properly."
+#                 }
+#                 res = json.dumps(data)
+#                 return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+#
+#         else:
+#             data = {
+#                 "error": "Error in parsing data."
+#             }
+#             res = json.dumps(data)
+#             return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#
+#     else:
+#         data = {
+#             "error": "Login First"
+#         }
+#         res = json.dumps(data)
+#         return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
 
-                try:
-                    info_obj = Information.objects.create(auth_id=request.user, info=info)
-                    info_obj.save()
-                    data = {
-                        'msg': "Information added Successfully",
-                        'date': datetime.datetime.now().strftime("%d %B, %Y %I:%M %p")
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_200_OK)
-                except Exception as e:
-                    print(e)
-                    data = {
-                        'error': "Error in adding Information."
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            else:
-                data = {
-                    "error": "Data not parsed properly."
-                }
-                res = json.dumps(data)
-                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+class InfoApiView(APIView):
+    permission_classes = [IsAuthenticated, ]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
 
+    def get(self, request):
+        qs = Information.objects.all()
+        serialized_qs = InformationSerializer(qs, many=True)
+        return Response(serialized_qs.data, status=200)
+
+    def post(self, request):
+        data = request.data
+        serializer = InformationSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"msg": "Information added successfully", "id": serializer.data["id"],
+                             "date": datetime.datetime.now().strftime("%d %B, %Y %I:%M %p")}, status=200)
         else:
-            data = {
-                "error": "Error in parsing data."
-            }
-            res = json.dumps(data)
-            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    else:
-        data = {
-            "error": "Login First"
-        }
-        res = json.dumps(data)
-        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+            print(serializer.errors)
+            return Response({"error": "Technical Error occurred"}, status=500)
 
 
-def editInfo(request):
-    if request.user.is_authenticated:
-        if request.method == "GET":
-            if request.GET.get('info_id') is not None:
-                info_id = int(request.GET.get('info_id'))
-                info = request.GET.get('info')
+class EditInfoApiView(APIView):
+    permission_classes = [IsAuthenticated, ]
+    authentication_classes = [SessionAuthentication, ]
 
-                try:
-                    info_obj = Information.objects.get(id=info_id)
-                    info_obj.info = info
-                    info_obj.save()
-                    data = {
-                        'msg': "Information Updated Successfully",
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_200_OK)
-                except Exception as e:
-                    print(e)
-                    data = {
-                        'error': "Error in Updating Information."
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def get_object(self, id):
+        try:
+            return Information.objects.get(id=id)
+        except Information.DoesNotExist as e:
+            return Response({"error": "Object Not Found"}, status=404)
 
-            else:
-                data = {
-                    "error": "Data not parsed properly."
-                }
-                res = json.dumps(data)
-                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
-
+    def put(self, request, id=None):
+        data = request.data
+        instance = self.get_object(id)
+        serializer = InformationSerializer(instance, data=data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"msg": "Information Updated Successfully"}, status=200)
         else:
-            data = {
-                "error": "Error in parsing data."
-            }
-            res = json.dumps(data)
-            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            print(serializer.errors)
+            return Response({"error": "Error Occurred"}, status=500)
 
-    else:
-        data = {
-            "error": "Login First"
-        }
-        res = json.dumps(data)
-        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+    def delete(self, request, id=None):
+        try:
+            instance = self.get_object(id)
+            instance.delete()
+            return Response({"msg": "Information Deleted Successfully"}, status=200)
+        except Exception as e:
+            print(e)
+            return Response({"error": "Error in deleting user"}, status=500)
 
 
-def deleteInfo(request):
-    if request.user.is_authenticated:
-        if request.method == "GET":
-            if request.GET.get('info_id') is not None:
-                info_id = int(request.GET.get('info_id'))
+class UserApiView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    authentication_classes = [SessionAuthentication, ]
 
-                try:
-                    info_obj = Information.objects.get(id=info_id)
-                    info_obj.delete()
-                    data = {
-                        'msg': "Information Deleted Successfully",
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_200_OK)
-                except Exception as e:
-                    print(e)
-                    data = {
-                        'error': "Error in deleting Information."
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def get_object(self, id):
+        try:
+            return User.objects.get(id=id)
+        except User.DoesNotExist as e:
+            return Response({"error": "User Not Found"}, status=404)
 
-            else:
-                data = {
-                    "error": "Data not parsed properly."
-                }
-                res = json.dumps(data)
-                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
-
+    def put(self, request, id=None):
+        data = request.data
+        instance = self.get_object(id)
+        serializer = UserSerializer(instance, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"msg": "User Updated Successfully"}, status=200)
         else:
-            data = {
-                "error": "Error in parsing data."
-            }
-            res = json.dumps(data)
-            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            print(serializer.errors)
+            return Response({"error": "Error Occurred"}, status=500)
 
-    else:
-        data = {
-            "error": "Login First"
-        }
-        res = json.dumps(data)
-        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+    def delete(self, request, id=None):
+        try:
+            instance = self.get_object(id)
+            instance.delete()
+            return Response({"msg": "User Deleted Successfully"}, status=200)
+        except Exception as e:
+            print(e)
+            return Response({"error": "Error in deleting user"}, status=500)
 
 
-def editUser(request):
-    if request.user.is_authenticated and request.user.is_superuser:
-        if request.method == "GET":
-            if request.GET.get('user_id') is not None:
-                id = int(request.GET.get('user_id'))
-                first_name = request.GET.get('first_name')
-                last_name = request.GET.get('last_name')
-                email = request.GET.get('email')
-                contact = request.GET.get('contact')
-                city = request.GET.get('city')
-                dob = request.GET.get('dob')
-                date_obj = datetime.datetime.strptime(dob, "%d %b, %Y")
+class DeleteUsers(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    authentication_classes = [SessionAuthentication, ]
 
-                try:
-                    user_obj = User.objects.get(id=id)
-                    user_obj.first_name = first_name
-                    user_obj.last_name = last_name
-                    user_obj.email = email
-                    user_obj.contact = contact
-                    user_obj.city = city
-                    user_obj.DOB = date_obj
+    def get_object(self, id):
+        try:
+            return User.objects.get(id=id)
+        except User.DoesNotExist as e:
+            return Response({"error": "User Not Found"}, status=404)
 
-                    user_obj.save()
+    def delete(self, request):
+        if request.data is not None:
+            id = list(request.data.getlist('id[]'))
+            for i in id:
+                instance = self.get_object(i)
+                instance.delete()
 
-                    data = {
-                        "msg": "User Information updated successfully"
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_200_OK)
-
-                except User.DoesNotExist:
-                    data = {
-                        "error": "User id is not valid."
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_404_NOT_FOUND)
-
-                except Exception as e:
-                    print(e)
-                    data = {
-                        "error": "Technical Error Occurred"
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            else:
-                data = {
-                    "error": "Data not parsed properly."
-                }
-                res = json.dumps(data)
-                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"msg": "Users Deleted Successfully"}, status=200)
         else:
-            data = {
-                "error": "Error in parsing data."
-            }
-            res = json.dumps(data)
-            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response({"error": "Data not passed"}, status=400)
 
-    else:
-        data = {
-            "error": "Login First"
-        }
-        res = json.dumps(data)
-        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
-
-
-def deleteUser(request):
-    if request.user.is_authenticated and request.user.is_superuser:
-        if request.method == "GET":
-            if request.GET.get('id') is not None:
-                id = request.GET.get('id')
-                list_id = eval(id)
-
-                try:
-                    for i in list_id:
-                        obj = User.objects.get(id=i)
-                        obj.delete()
-
-                    data = {
-                        "msg": "Users deleted successfully"
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_200_OK)
-
-                except Exception as e:
-                    print(e)
-                    data = {
-                        "error": "Technical Error Occurred."
-                    }
-                    res = json.dumps(data)
-                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            else:
-                data = {
-                    "error": "Data not parsed properly."
-                }
-                res = json.dumps(data)
-                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
-
-        else:
-            data = {
-                "error": "Error in parsing data."
-            }
-            res = json.dumps(data)
-            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    else:
-        data = {
-            "error": "Login First"
-        }
-        res = json.dumps(data)
-        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+# @api_view(['PUT', ])
+# def editUser(request):
+#     if request.user.is_authenticated and request.user.is_superuser:
+#         if request.method == "GET":
+#             if request.GET.get('user_id') is not None:
+#                 id = int(request.GET.get('user_id'))
+#                 first_name = request.GET.get('first_name')
+#                 last_name = request.GET.get('last_name')
+#                 email = request.GET.get('email')
+#                 contact = request.GET.get('contact')
+#                 city = request.GET.get('city')
+#                 dob = request.GET.get('dob')
+#                 date_obj = datetime.datetime.strptime(dob, "%d %b, %Y")
+#
+#                 try:
+#                     user_obj = User.objects.get(id=id)
+#                     user_obj.first_name = first_name
+#                     user_obj.last_name = last_name
+#                     user_obj.email = email
+#                     user_obj.contact = contact
+#                     user_obj.city = city
+#                     user_obj.DOB = date_obj
+#
+#                     user_obj.save()
+#
+#                     data = {
+#                         "msg": "User Information updated successfully"
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_200_OK)
+#
+#                 except User.DoesNotExist:
+#                     data = {
+#                         "error": "User id is not valid."
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_404_NOT_FOUND)
+#
+#                 except Exception as e:
+#                     print(e)
+#                     data = {
+#                         "error": "Technical Error Occurred"
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#             else:
+#                 data = {
+#                     "error": "Data not parsed properly."
+#                 }
+#                 res = json.dumps(data)
+#                 return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+#
+#         else:
+#             data = {
+#                 "error": "Error in parsing data."
+#             }
+#             res = json.dumps(data)
+#             return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#
+#     else:
+#         data = {
+#             "error": "Login First"
+#         }
+#         res = json.dumps(data)
+#         return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+#
+#
+# @api_view(['DELETE', ])
+# def deleteUser(request):
+#     if request.user.is_authenticated and request.user.is_superuser:
+#         if request.method == "GET":
+#             if request.GET.get('id') is not None:
+#                 id = request.GET.get('id')
+#                 list_id = eval(id)
+#
+#                 try:
+#                     for i in list_id:
+#                         obj = User.objects.get(id=i)
+#                         obj.delete()
+#
+#                     data = {
+#                         "msg": "Users deleted successfully"
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_200_OK)
+#
+#                 except Exception as e:
+#                     print(e)
+#                     data = {
+#                         "error": "Technical Error Occurred."
+#                     }
+#                     res = json.dumps(data)
+#                     return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+#
+#             else:
+#                 data = {
+#                     "error": "Data not parsed properly."
+#                 }
+#                 res = json.dumps(data)
+#                 return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+#
+#         else:
+#             data = {
+#                 "error": "Error in parsing data."
+#             }
+#             res = json.dumps(data)
+#             return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#
+#     else:
+#         data = {
+#             "error": "Login First"
+#         }
+#         res = json.dumps(data)
+#         return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)

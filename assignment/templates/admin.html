@@ -134,6 +134,13 @@
             </div>
         </div>
     </div>
+    {% csrf_token %}
+
+    <div id="overlay">
+        <svg class="spinner centered" width="65px" height="65px" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+           <circle class="path" fill="none" stroke-width="6" stroke-linecap="round" cx="33" cy="33" r="30"></circle>
+        </svg>
+    </div>
 {% endblock body %}
 <!-- Body Block > End -->
 
@@ -153,6 +160,17 @@
 
 <!-- Custom Js Block > Start -->
 {% block custom_js %}
+    <!-- enablind spinner -->
+    <script type="text/javascript">
+        function displayOverlay() {
+            $('div#overlay').show();
+        }
+
+        function removeOverlay() {
+            $('div#overlay').hide();
+        }
+    </script>
+
     <!-- Enabling Datatable -->
     <script type="text/javascript">
         var table = $('#user-table');
@@ -168,6 +186,8 @@
     <script type="text/javascript">
         var total_row = table.find('.data-select').length;
         var selected_rows = [];
+
+        var token =  $('input[name="csrfmiddlewaretoken"]').attr('value');
 
         //hiding save and x button from table
         $(document).find('button.btn-save').hide();
@@ -237,19 +257,23 @@
                     confirmButtonText: 'Delete',
                     showLoaderOnConfirm: true,
                     preConfirm: () => {
+                        displayOverlay();
                         // ajax request
                         $.ajax({
-                            type:"GET",
-                            url:"{% url 'delete-user' %}",
+                            type:"DELETE",
+                            url:"/api/delete-users/",
+                            beforeSend: function (xhr, settings) {
+                                xhr.setRequestHeader("X-CSRFToken", token);
+                            },
                             data: {
-                                id: JSON.stringify(selected_rows, null),
+                                id: selected_rows,
                             },
 
                             success: function (msg) {
-                                var response = JSON.parse(msg);
+                                removeOverlay();
                                 Swal.fire({
                                     title: "Success",
-                                    text: response["msg"],
+                                    text: msg["msg"],
                                     icon: "success"
                                 });
 
@@ -260,11 +284,10 @@
                             },
 
                             error: function (msg) {
-                                var response = JSON.parse(msg.responseText);
-                                console.log(msg);
+                                removeOverlay();
                                 Swal.fire({
                                     title: msg.status + " " + msg.statusText,
-                                    text: response["error"],
+                                    text: msg["error"],
                                     icon: "error"
                                 });
                             }
@@ -288,19 +311,20 @@
                 confirmButtonText: 'Delete',
                 showLoaderOnConfirm: true,
                 preConfirm: () => {
+                    displayOverlay();
                     // ajax request
                     $.ajax({
-                        type:"GET",
-                        url:"{% url 'delete-user' %}",
-                        data: {
-                            id: JSON.stringify([user_id,], null),
+                        type:"DELETE",
+                        url:"/api/edit-user/"+user_id+"/",
+                        beforeSend: function (xhr, settings) {
+                            xhr.setRequestHeader("X-CSRFToken", token);
                         },
 
                         success: function (msg) {
-                            var response = JSON.parse(msg);
+                            removeOverlay();
                             Swal.fire({
                                 title: "Success",
-                                text: response["msg"],
+                                text: msg["msg"],
                                 icon: "success"
                             });
 
@@ -309,11 +333,10 @@
                         },
 
                         error: function (msg) {
-                            var response = JSON.parse(msg.responseText);
-                            console.log(msg);
+                            removeOverlay();
                             Swal.fire({
                                 title: msg.status + " " + msg.statusText,
-                                text: response["error"],
+                                text: msg["error"],
                                 icon: "error"
                             });
                         }
@@ -391,6 +414,7 @@
 
         //click event for save button.
         $('button.btn-save').on('click', function (event) {
+            displayOverlay();
             event.preventDefault();
             var tbl_row = $(this).closest('tr');
             var user_id = tbl_row.attr('row_id');
@@ -409,10 +433,9 @@
             var new_dob = tbl_row.find('[name=new_dob]').val();
 
             $.ajax({
-                type:"GET",
-                url:"{% url 'edit-user' %}",
+                type:"PUT",
+                url:"/api/edit-user/"+user_id+"/",
                 data: {
-                    user_id: user_id,
                     first_name: new_first_name,
                     last_name: new_last_name,
                     email: new_email,
@@ -420,11 +443,14 @@
                     city: new_city,
                     dob: new_dob
                 },
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", token);
+                },
 
                 success: function (msg) {
-                    var response = JSON.parse(msg);
+                    removeOverlay();
                     Swal.fire({
-                        title: response["msg"],
+                        title: msg["msg"],
                         icon: "success"
                     });
 
@@ -452,9 +478,10 @@
                 },
 
                 error: function (msg) {
-                    var response = JSON.parse(msg.responseText);
+                    removeOverlay();
                     Swal.fire({
-                        title: response["error"],
+                        title: msg.status + " " + msg.statusText,
+                        text: msg["error"],
                         icon: "error"
                     });
 
