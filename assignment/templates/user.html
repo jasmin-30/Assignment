@@ -316,6 +316,9 @@
                     html += '<td style="white-space: normal;"><div class="info-data">'+ info +'</div></td><td>'+ msg["date"] +'</td>';
                     html += '<td class="text-center"><div class="btn-group btn-group-sm" role="group" aria-label="Basic example"><button type="button" class="btn-edit btn btn-sm btn-primary"><i class="feather icon-edit"></i></button><button type="button" class="btn-remove btn btn-sm btn-danger"><i class="feather icon-trash-2"></i></button><button type="button" class="btn-save btn btn-sm btn-success"><i class="feather icon-check"></i></button><button type="button" class="btn-cancel btn btn-sm btn-secondary"><i class="feather icon-x"></i></button></div></td>';
                     html += '</tr>';
+                    if($('button.btn-edit').length == 0) {
+                        $('tbody#info-table').html('');
+                    }
 
                     $('tbody#info-table').prepend(html);
                     $(document).find('button.btn-save').hide();
