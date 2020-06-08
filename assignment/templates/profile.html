@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% load static %}
+<!-- Title block > Start -->
+{% block title %}
+    User Profile
+{% endblock title %}
+<!-- Title block > End -->
+
+<!-- Extra css Block > Start -->
+{% block extra_css %}
+    <!-- Bootstrap Datepicker -->
+    <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock extra_css %}
+<!-- Extra css Block > End -->
+
+<!-- Body Block > Start -->
+{% block body %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container d-flex align-items-center">
+            <a class="navbar-brand" href="{% url 'Home_page' %}">
+                <h3>Post and Manage Status</h3>
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#nav-links" aria-controls="nav-links" aria-expanded="false" aria-label="Toggle navigation">
+                <i class="feather icon-menu"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="nav-links">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item dropdown custom-dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {{ name }}
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                            <a class="dropdown-item custom-dropdown" href="{% url 'User_Profile' %}" style="margin-bottom: 5px">
+                                <i class="feather icon-settings"></i>&nbsp;&nbsp;Profile
+                            </a>
+                            <a class="dropdown-item custom-dropdown" href="{% url 'Logout' %}">
+                                <i class="feather icon-log-out"></i>&nbsp;&nbsp;Logout
+                            </a>
+                        </div>
+                    </li>
+                </ul>
+	      </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-sm-12 d-flex justify-content-center" style="margin-top: 10px;">
+                <h4>Profile</h4>
+            </div>
+
+            <div class="col-sm-6" style="margin-top: 10px;">
+                <div class="card">
+                    <div class="card-header">
+                        <nav>
+                            <div class="nav nav-pills nav-fill" id="nav-tab" role="tablist">
+                                <a class="nav-item nav-link active" id="nav-details-tab" data-toggle="tab" href="#details" role="tab" aria-controls="details" aria-selected="true">Personal Details</a>
+                                <a class="nav-item nav-link" id="nav-password-tab" data-toggle="tab" href="#password" role="tab" aria-controls="password" aria-selected="false">Password</a>
+                            </div>
+                        </nav>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="nav-tabContent">
+                            <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="nav-details-tab">
+                                <form action="{% url 'User_Profile' %}" method="post">
+                                    {% csrf_token %}
+                                    <div class="form-group row">
+                                        <label for="first_name" class="col-md-4 col-form-label text-md-right">First Name : </label>
+                                        <div class="col-md-8" id="first-name-div">
+                                            <label class="col-form-label">{{ user.first_name }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="last_name" class="col-md-4 col-form-label text-md-right">Last Name : </label>
+                                        <div class="col-md-8" id="last-name-div">
+                                            <label class="col-form-label">{{ user.last_name }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="email" class="col-md-4 col-form-label text-md-right">Email Address : </label>
+                                        <div class="col-md-8" id="email-div">
+                                            <label class="col-form-label">{{ user.email }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="contact" class="col-md-4 col-form-label text-md-right">Contact Number : </label>
+                                        <div class="col-md-8" id="contact-div">
+                                            <label class="col-form-label">{{ user.contact }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="dob" class="col-md-4 col-form-label text-md-right">Date of Birth : </label>
+                                        <div class="col-md-8" id="dob-div">
+                                            <label class="col-form-label">{{ user.DOB|date:"d M, Y" }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="city" class="col-md-4 col-form-label text-md-right">City : </label>
+                                        <div class="col-md-8" id="city-div">
+                                            <label class="col-form-label">{{ user.city }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8 offset-md-4">
+                                        <button type="button" class="btn btn-outline-primary" id="button-submit">Edit Profile</button>
+                                        <button type="button" class="btn btn-outline-primary" id="button-cancel">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="tab-pane fade show" id="password" role="tabpanel" aria-labelledby="nav-password-tab">
+                                <form action="{% url 'User_Profile' %}" method="post">
+                                    {% csrf_token %}
+                                    <div class="form-group row">
+                                        <label for="oldpwd" class="col-md-4 col-form-label text-md-right">Old Password : </label>
+                                        <div class="col-md-8">
+                                            <input type="password" class="form-control" id="oldpwd" name="oldpwd" required/>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="newpwd" class="col-md-4 col-form-label text-md-right">New Password : </label>
+                                        <div class="col-md-8">
+                                            <input type="password" class="form-control" id="newpwd" name="newpwd" minlength="6" maxlength="16" oninput="validate_password()" required/>
+                                            <div id="Error_newpwd" style="display: none; color: red;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <label for="cnfrmpwd" class="col-md-4 col-form-label text-md-right">Confirm Password : </label>
+                                        <div class="col-md-8">
+                                            <input type="password" class="form-control" id="cnfrmpwd" name="cnfrmpwd" minlength="6" maxlength="16" oninput="verify_pwd()" required/>
+                                            <div id="Error_cnfrmpwd" style="display: none; color: red;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8 offset-md-4">
+                                        <button type="submit" class="btn btn-disabled" id="button-update" name="button-update" disabled>Update</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock body %}
+<!-- Body Block > End -->
+
+<!-- Extra Js Block > Start -->
+{% block extra_js %}
+    <!-- Bootstrap Datepicker -->
+    <script type="text/javascript" src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+
+    <!-- Sweetalert -->
+    <script type="text/javascript" src="{% static 'js/sweetalert2@9.js' %}"></script>
+{% endblock extra_js %}
+<!-- Extra Js Block > End -->
+
+<!-- Custom Js Block > Start -->
+{% block custom_js %}
+    <!-- Sweetalert -->
+    <script type="text/javascript">
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    title: "{{ message }}",
+                    type: "{{ message.tags }}",
+                    icon: "{{ message.tags }}"
+                });
+            {% endfor %}
+        {% endif %}
+    </script>
+
+    <!-- Javascript for enabling editing in details -->
+    <script type="text/javascript">
+        var cities = ["Ahmedabad", "Amreli", "Anand", "Banas Kantha", "Bharuch", "Bhavnagar", "Dang",
+                      "Dahod", "Gandhinagar", "Jamnagar", "Junagadh", "Kachch", "Kheda", "Mahesana",
+                      "Narmada", "Navsari", "Panch mahal", "Patan", "Porbandar", "Rajkot", "Sabar kantha",
+                      "Surat", "Surendranagar", "Tapi", "Vadodara", "Valsad"];
+
+        $(document).ready(function () {
+            var btn_cancel = $('button#button-cancel');
+            btn_cancel.hide();
+            var btn = $('button#button-submit');
+            var fname_tag = $('div#first-name-div');
+            var old_fname = fname_tag.html();
+            var lname_tag = $('div#last-name-div');
+            var old_lname = lname_tag.html();
+            var email_tag = $('div#email-div');
+            var old_email = email_tag.html();
+            var contact_tag = $('div#contact-div');
+            var old_contact = contact_tag.html();
+            var dob_tag = $('div#dob-div');
+            var old_dob = dob_tag.html();
+            var city_tag = $('div#city-div');
+            var old_city = city_tag.html();
+            function edit(event){
+                event.preventDefault();
+                // Adding textboxes in place of labels
+                fname_tag.html('<input type="text" class="form-control" name="first_name" id="first_name" value="'+ fname_tag.find('label').html() +'" required>');
+                lname_tag.html('<input type="text" class="form-control" name="last_name" id="last_name" value="'+ lname_tag.find('label').html() +'" required>');
+                email_tag.html('<input type="email" class="form-control" name="email" id="email" value="'+ email_tag.find('label').html() +'" required>');
+                contact_tag.html('<input type="text" class="form-control" name="contact" id="contact" value="'+ contact_tag.find('label').html() +'" data-toggle="tooltip" title="Only Numbers are allowed" maxlength="10" pattern="[0-9]{10}" required>');
+                dob_tag.html('<input type="text" class="form-control datepicker" name="dob" id="dob" value="'+ dob_tag.find('label').html() +'" required>');
+                $('.datepicker').datepicker({
+                    format: "dd M, yyyy"
+                });
+
+                var city_input = '<select class="custom-select" id="city" name="city" required>';
+                var value = city_tag.find('label').html();
+                $.each(cities, function (index, val) {
+                    if(val == value){
+                        city_input += '<option value="'+ val +'" selected>'+ val +'</option>';
+                    }
+                    else {
+                        city_input += '<option value="'+ val +'">'+ val +'</option>';
+                    }
+                });
+                city_input += '</select>';
+                city_tag.html(city_input);
+
+                $('[data-toggle="tooltip"]').tooltip();
+                // Changing button attributes
+                btn.html('Save Changes');
+                btn.attr('type', 'submit');
+                btn_cancel.show();
+                btn.off('click');
+            }
+            btn.click(edit);
+            btn_cancel.click(function (event) {
+                event.preventDefault();
+                btn.html('Edit Profile');
+                btn.attr('type', 'button');
+                btn.on('click', edit);
+                // Displaying old content.
+                fname_tag.html(old_fname);
+                lname_tag.html(old_lname);
+                email_tag.html(old_email);
+                contact_tag.html(old_contact);
+                dob_tag.html(old_dob);
+                city_tag.html(old_city);
+
+                btn_cancel.hide();
+            });
+        });
+    </script>
+
+    <!-- Validation js > Start -->
+    <script type="text/javascript">
+        function validate_password() {
+            var regularExpression = /^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[a-zA-Z!@#$%&? "])[a-zA-Z0-9!@#$%&?]{6,16}$/;
+            var pwd = document.getElementById('newpwd').value;
+            var tag = document.getElementById('Error_newpwd');
+            if(regularExpression.test(pwd)){
+                $('input#newpwd').removeAttr('style');
+                tag.style.display = 'none';
+                return true;
+            }
+            else {
+                tag.innerHTML = "Password must have at least one uppercase, one lowercase, one digit and one special character. Length of password is 6 to 16.";
+                tag.style.display = 'block';
+                $('input#newpwd').css('border-color', 'red');
+                return false;
+            }
+        }
+
+        function verify_pwd() {
+            var pwd = document.getElementById('newpwd').value;
+            var pwd1 = document.getElementById('cnfrmpwd').value;
+            var tag = document.getElementById('Error_cnfrmpwd');
+            var btn = document.getElementById('button-update');
+            if(pwd !== pwd1) {
+                tag.style.display = 'block';
+                tag.innerHTML = "Password does not match";
+                $('input#cnfrmpwd').css('border-color', 'red');
+                btn.classList.remove('btn-outline-primary');
+                btn.classList.add('btn-disabled');
+                btn.disabled = true;
+            }
+            else {
+                tag.style.display = 'none';
+                $('input#cnfrmpwd').removeAttr('style');
+                if(validate_password()) {
+                    btn.classList.remove('btn-disabled');
+                    btn.classList.add('btn-outline-primary');
+                    btn.disabled = false;
+                }
+                else {
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-disabled');
+                    btn.disabled = true;
+                }
+            }
+        }
+    </script>
+    <!-- Validation js > End -->
+{% endblock custom_js %}
+<!-- Custom Js Block > End -->

@@ -85,3 +85,6 @@ class Information(models.Model):
 
     class Meta:
         get_latest_by = 'timestamp'
+
+    def __str__(self):
+        return self.auth_id.email

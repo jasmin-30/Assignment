@@ -248,7 +248,6 @@
                             success: function (msg) {
                                 var response = JSON.parse(msg);
                                 Swal.fire({
-                                    type: "success",
                                     title: "Success",
                                     text: response["msg"],
                                     icon: "success"
@@ -300,7 +299,6 @@
                         success: function (msg) {
                             var response = JSON.parse(msg);
                             Swal.fire({
-                                type: "success",
                                 title: "Success",
                                 text: response["msg"],
                                 icon: "success"
@@ -432,7 +430,6 @@
 
                     // Updating existing data
                     tbl_row.find('.user-data').each(function (index, val) {
-                        $(this).attr('original_entry', $(this).html().toString().trim());
                         if($(this).attr('col_name') == "first_name") {
                             $(this).html(new_first_name);
                         }
@@ -459,6 +456,28 @@
                     Swal.fire({
                         title: response["error"],
                         icon: "error"
+                    });
+
+                    // Updating existing data
+                    tbl_row.find('.user-data').each(function (index, val) {
+                        if($(this).attr('col_name') == "first_name") {
+                            $(this).html($(this).attr('original_entry'));
+                        }
+                        else if($(this).attr('col_name') == "last_name") {
+                            $(this).html($(this).attr('original_entry'));
+                        }
+                        else if($(this).attr('col_name') == "email") {
+                            $(this).html($(this).attr('original_entry'));
+                        }
+                        else if($(this).attr('col_name') == "contact") {
+                            $(this).html($(this).attr('original_entry'));
+                        }
+                        else if($(this).attr('col_name') == "city") {
+                            $(this).html($(this).attr('original_entry'));
+                        }
+                        else if($(this).attr('col_name') == "dob") {
+                            $(this).html($(this).attr('original_entry'));
+                        }
                     });
                 }
             });

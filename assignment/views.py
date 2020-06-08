@@ -3,7 +3,8 @@ import json
 
 from django.conf import settings as st
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth.hashers import check_password
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render
@@ -93,7 +94,6 @@ def Logout(request):
 
 
 # ======================== Dashboard view ===========================
-# It will display pages according to
 def userDashboard(request):
     context = {
         'base_url': st.BASE_URL
@@ -104,6 +104,68 @@ def userDashboard(request):
         context["info"] = info_qs
         context["count"] = info_qs.count()
         return render(request, 'user.html', context)
+    else:
+        messages.error(request, "Login First")
+        return HttpResponseRedirect('/')
+
+
+def userProfile(request):
+    context = {
+        'base_url': st.BASE_URL
+    }
+    if request.user.is_authenticated:
+        if request.method == "POST":
+            if request.POST.get('first_name') is not None:
+                fname = request.POST.get('first_name')
+                lname = request.POST.get('last_name')
+                email = request.POST.get('email')
+                contact = request.POST.get('contact')
+                dob = request.POST.get('dob')
+                date_obj = datetime.datetime.strptime(dob, "%d %b, %Y")
+                city = request.POST.get('city')
+
+                try:
+                    user_obj = User.objects.get(id=request.user.id)
+                    user_obj.first_name = fname
+                    user_obj.last_name = lname
+                    user_obj.email = email
+                    user_obj.contact = contact
+                    user_obj.city = city
+                    user_obj.DOB = date_obj
+                    user_obj.save()
+                    request.user = user_obj
+                    messages.success(request, "Personal Details changed successfully")
+
+                except User.DoesNotExist:
+                    messages.error(request, "User does not exist. contact developers")
+
+                except Exception as e:
+                    print(e)
+                    messages.error(request, "Technical Problem Occurred")
+
+            if request.POST.get('newpwd') is not None:
+                oldpwd = request.POST.get('oldpwd')
+                newpwd = request.POST.get('newpwd')
+                pwd = request.user.password
+                if check_password(oldpwd, pwd):
+                    try:
+                        user_obj = User.objects.get(id=request.user.id)
+                        user_obj.set_password(str(newpwd))
+                        user_obj.save()
+                        update_session_auth_hash(request, user_obj)
+                        messages.success(request, "Password Changed Successfully.")
+
+                    except Exception as e:
+                        print(e)
+                        messages.error(request, "Error in changing password. please try again later.")
+
+                else:
+                    messages.error(request, "Old Password does not match with the one you entered. Please enter correct password.")
+
+        context['name'] = request.user.first_name + " " + request.user.last_name
+        context['user'] = request.user
+        return render(request, 'profile.html', context)
+
     else:
         messages.error(request, "Login First")
         return HttpResponseRedirect('/')
@@ -144,6 +206,96 @@ def addInfo(request):
                     print(e)
                     data = {
                         'error': "Error in adding Information."
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            else:
+                data = {
+                    "error": "Data not parsed properly."
+                }
+                res = json.dumps(data)
+                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            data = {
+                "error": "Error in parsing data."
+            }
+            res = json.dumps(data)
+            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    else:
+        data = {
+            "error": "Login First"
+        }
+        res = json.dumps(data)
+        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+
+
+def editInfo(request):
+    if request.user.is_authenticated:
+        if request.method == "GET":
+            if request.GET.get('info_id') is not None:
+                info_id = int(request.GET.get('info_id'))
+                info = request.GET.get('info')
+
+                try:
+                    info_obj = Information.objects.get(id=info_id)
+                    info_obj.info = info
+                    info_obj.save()
+                    data = {
+                        'msg': "Information Updated Successfully",
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_200_OK)
+                except Exception as e:
+                    print(e)
+                    data = {
+                        'error': "Error in Updating Information."
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            else:
+                data = {
+                    "error": "Data not parsed properly."
+                }
+                res = json.dumps(data)
+                return HttpResponse(res, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            data = {
+                "error": "Error in parsing data."
+            }
+            res = json.dumps(data)
+            return HttpResponse(res, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    else:
+        data = {
+            "error": "Login First"
+        }
+        res = json.dumps(data)
+        return HttpResponse(res, status=status.HTTP_401_UNAUTHORIZED)
+
+
+def deleteInfo(request):
+    if request.user.is_authenticated:
+        if request.method == "GET":
+            if request.GET.get('info_id') is not None:
+                info_id = int(request.GET.get('info_id'))
+
+                try:
+                    info_obj = Information.objects.get(id=info_id)
+                    info_obj.delete()
+                    data = {
+                        'msg': "Information Deleted Successfully",
+                    }
+                    res = json.dumps(data)
+                    return HttpResponse(res, status=status.HTTP_200_OK)
+                except Exception as e:
+                    print(e)
+                    data = {
+                        'error': "Error in deleting Information."
                     }
                     res = json.dumps(data)
                     return HttpResponse(res, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

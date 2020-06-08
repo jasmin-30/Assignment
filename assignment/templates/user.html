@@ -28,7 +28,7 @@
                             {{ name }}
                         </a>
                         <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                            <a class="dropdown-item custom-dropdown" href="#" style="margin-bottom: 5px">
+                            <a class="dropdown-item custom-dropdown" href="{% url 'User_Profile' %}" style="margin-bottom: 5px">
                                 <i class="feather icon-settings"></i>&nbsp;&nbsp;Profile
                             </a>
                             <a class="dropdown-item custom-dropdown" href="{% url 'Logout' %}">
@@ -69,20 +69,41 @@
                             <table class="table table-hover table-bordered">
                                 <thead>
                                 <tr>
-                                    <th scope="col" style="width: 70%">Information</th>
-                                    <th scope="col" style="width: 30%">Date</th>
+                                    <th scope="col" style="width: 60%">Information</th>
+                                    <th scope="col" style="width: 25%">Date</th>
+                                    <th scope="col" style="width: 15%">Action</th>
                                 </tr>
                                 </thead>
                                 <tbody id="info-table">
                                 {% ifequal count 0 %}
                                     <tr>
-                                        <td colspan="2"><span style="color: red;">No Information available.</span></td>
+                                        <td colspan="3"><span style="color: red;">No Information available.</span></td>
                                     </tr>
                                 {% else %}
                                     {% for i in info %}
-                                        <tr>
-                                            <td style="white-space: normal;">{{ i.info }}</td>
+                                        <tr row_id="{{ i.id }}">
+                                            <td style="white-space: normal;">
+                                                <div class="info-data">
+                                                    {{ i.info }}
+                                                </div>
+                                            </td>
                                             <td>{{ i.timestamp|date:"d F, Y h:i A" }}</td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group" aria-label="Basic example">
+                                                    <button type="button" class="btn-edit btn btn-sm btn-primary">
+                                                        <i class="feather icon-edit"></i>
+                                                    </button>
+                                                    <button type="button" class="btn-remove btn btn-sm btn-danger">
+                                                        <i class="feather icon-trash-2"></i>
+                                                    </button>
+                                                    <button type="button" class="btn-save btn btn-sm btn-success">
+                                                        <i class="feather icon-check"></i>
+                                                    </button>
+                                                    <button type="button" class="btn-cancel btn btn-sm btn-secondary">
+                                                        <i class="feather icon-x"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                 {% endifequal %}
@@ -165,6 +186,137 @@
                 }
             });
         })
+    </script>
+
+    <!-- Javasscripts for modifying information dara -->
+    <script type="text/javascript">
+        // Buttons
+        $(document).find('button.btn-save').hide();
+        $(document).find('button.btn-cancel').hide();
+
+        var old_info;
+        // Click event for edit button.
+        $('button.btn-edit').on('click', function (event) {
+            event.preventDefault();
+            var tbl_row = $(this).closest('tr');
+            var info_id = tbl_row.attr('row_id');
+
+            //Buttons
+            tbl_row.find('.btn-edit').hide();
+            tbl_row.find('.btn-remove').hide();
+            tbl_row.find('.btn-save').show();
+            tbl_row.find('.btn-cancel').show();
+
+            var div = tbl_row.find('.info-data');
+            old_info = div.html().toString().trim();
+            var input = '<textarea class="form-control" name="new_info" id="new_info" cols="3">'+ old_info +'</textarea>';
+            div.html(input);
+        });
+
+        //click event for save button
+        $('button.btn-save').on('click', function (event) {
+            event.preventDefault();
+            var tbl_row = $(this).closest('tr');
+            var info_id = tbl_row.attr('row_id');
+
+            //Buttons
+            tbl_row.find('.btn-edit').show();
+            tbl_row.find('.btn-remove').show();
+            tbl_row.find('.btn-save').hide();
+            tbl_row.find('.btn-cancel').hide();
+
+            var info = tbl_row.find('[name=new_info]').val();
+            //ajax request
+            $.ajax({
+                type:"GET",
+                url:"{% url 'edit-info' %}",
+                data: {
+                    info_id: info_id,
+                    info: info
+                },
+
+                success: function (msg) {
+                    var response = JSON.parse(msg);
+                    Swal.fire({
+                        title: response["msg"],
+                        icon: "success"
+                    });
+
+                    tbl_row.find('div.info-data').html(info);
+                },
+
+                error: function (msg) {
+                    var response = JSON.parse(msg.responseText);
+                    Swal.fire({
+                        title: response["error"],
+                        icon: "error"
+                    });
+
+                    tbl_row.find('div.info-data').html(old_info);
+                }
+            })
+        });
+
+        //click event for cancel button
+        $('button.btn-cancel').on('click', function (event) {
+            event.preventDefault();
+            var tbl_row = $(this).closest('tr');
+            //Buttons
+            tbl_row.find('.btn-edit').show();
+            tbl_row.find('.btn-remove').show();
+            tbl_row.find('.btn-save').hide();
+            tbl_row.find('.btn-cancel').hide();
+
+            tbl_row.find('.info-data').html(old_info);
+        });
+
+        // Click event for action delete button
+        $('button.btn-remove').on('click', function (event) {
+            event.preventDefault();
+            var tbl_row = $(this).closest('tr');
+            var info_id = tbl_row.attr('row_id');
+
+            Swal.fire({
+                title: 'Are you Sure?',
+                text: 'Information will be deleted.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Delete',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    // ajax request
+                    $.ajax({
+                        type:"GET",
+                        url:"{% url 'delete-info' %}",
+                        data: {
+                            info_id: info_id
+                        },
+
+                        success: function (msg) {
+                            var response = JSON.parse(msg);
+                            Swal.fire({
+                                title: response["msg"],
+                                icon: "success"
+                            });
+
+                            //deleting row
+                            tbl_row.remove();
+                        },
+
+                        error: function (msg) {
+                            var response = JSON.parse(msg.responseText);
+                            console.log(msg);
+                            Swal.fire({
+                                title: msg.status + " " + msg.statusText,
+                                text: response["error"],
+                                icon: "error"
+                            });
+                        }
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            });
+        });
     </script>
 {% endblock custom_js %}
 <!-- Custom Js Block > End -->
